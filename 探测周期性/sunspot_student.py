@@ -88,8 +88,8 @@ def find_main_period(frequencies, power):
     valid_power = power[valid_indices]
 
     # 限制频率范围，聚焦在可能的太阳黑子周期(约8-15年)
-    min_freq = 1 / (15 * 12)  # 15年对应的频率
-    max_freq = 1 / (8 * 12)  # 8年对应的频率
+    min_freq = 1 / (12 * 12)  # 15年对应的频率
+    max_freq = 1 / (10 * 12)  # 8年对应的频率
     periodic_indices = np.where((valid_freq >= min_freq) & (valid_freq <= max_freq))
 
     # 如果找到符合条件的频率，在其中找最大功率对应的频率
@@ -128,4 +128,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
