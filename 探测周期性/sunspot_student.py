@@ -55,11 +55,11 @@ def compute_power_spectrum(sunspots):
         tuple: (frequencies, power) 频率数组和功率谱
     """
     n = len(sunspots)
-    fft_result = np.fft.fft(sunspots)
-    power = np.abs(fft_result) ** 2 / n
-    frequencies = np.fft.fftfreq(n, 1)  # 采样间隔为1个月
-    return frequencies[:n // 2], power[:n // 2]  # 只取正频率部分
-
+    # 使用正确的FFT算法和归一化
+    fft_result = np.fft.rfft(sunspots)
+    power = np.abs(fft_result) ** 2 / n ** 2  # 双边功率谱归一化
+    frequencies = np.fft.rfftfreq(n, d=1.0)  # 采样间隔为1个月
+    return frequencies, power
 
 def plot_power_spectrum(frequencies, power):
     """
@@ -91,30 +91,40 @@ def find_main_period(frequencies, power):
         float: 主周期（月）
     """
     # 排除频率为0的直流分量
-    valid_indices = np.where(frequencies > 0.0001)  # 设置一个小阈值，排除接近0的频率
+    valid_indices = np.where(frequencies > 0.0001)
     valid_freq = frequencies[valid_indices]
     valid_power = power[valid_indices]
 
-    # 限制频率范围，聚焦在可能的太阳黑子周期(约8-15年)
-    min_freq = 1 / (15 * 12)  # 15年对应的频率
-    max_freq = 1 / (8 * 12)  # 8年对应的频率
-    periodic_indices = np.where((valid_freq >= min_freq) & (valid_freq <= max_freq))
+    # 太阳黑子周期通常在9-14年之间
+    min_freq = 1 / (14 * 12)  # 14年对应的频率
+    max_freq = 1 / (9 * 12)  # 9年对应的频率
 
-    # 如果找到符合条件的频率，在其中找最大功率对应的频率
-    if len(periodic_indices[0]) > 0:
-        filtered_freq = valid_freq[periodic_indices]
-        filtered_power = valid_power[periodic_indices]
-        max_power_index = np.argmax(filtered_power)
-        main_freq = filtered_freq[max_power_index]
+    # 在感兴趣的频率范围内查找峰值
+    periodic_indices = np.where((valid_freq >= min_freq) & (valid_freq <= max_freq))
+    if len(periodic_indices[0]) == 0:
+        # 如果指定范围内没有峰值，使用所有有效频率
+        periodic_indices = np.arange(len(valid_freq))
+
+    filtered_freq = valid_freq[periodic_indices]
+    filtered_power = valid_power[periodic_indices]
+
+    # 使用抛物线插值法更精确地定位峰值
+    max_idx = np.argmax(filtered_power)
+
+    # 确保有足够的点进行插值
+    if max_idx > 0 and max_idx < len(filtered_power) - 1:
+        # 抛物线插值
+        x = np.array([-1, 0, 1])
+        y = filtered_power[max_idx - 1:max_idx + 2]
+        coeffs = np.polyfit(x, y, 2)
+        peak_x = -coeffs[1] / (2 * coeffs[0])
+        main_freq = filtered_freq[max_idx] + peak_x * (filtered_freq[1] - filtered_freq[0])
     else:
-        # 如果没有找到符合条件的频率，使用所有有效频率
-        max_power_index = np.argmax(valid_power)
-        main_freq = valid_freq[max_power_index]
+        main_freq = filtered_freq[max_idx]
 
     # 计算周期（月）
     main_period = 1 / main_freq
     return main_period
-
 def main():
     # 数据文件路径
     data = "sunspot_data.txt"
@@ -135,4 +145,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
