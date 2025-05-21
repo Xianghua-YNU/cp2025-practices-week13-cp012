@@ -68,7 +68,7 @@ def newton_method(f, df, x0, tol=1e-8, max_iter=100):
     返回:
         tuple: (近似解, 迭代次数, 收敛标志)
     """
-   x = x0
+    x = x0
     iterations = 0
     converged = False
 
