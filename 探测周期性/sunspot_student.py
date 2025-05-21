@@ -19,9 +19,9 @@ def load_sunspot_data(url):
     返回:
         tuple: (years, sunspots) 年份和太阳黑子数
     """
-    # TODO: 使用np.loadtxt读取数据，只保留第2(年份)和3(太阳黑子数)列
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    data = np.loadtxt(url)
+    years = data[:, 1]
+    sunspots = data[:, 2]
     return years, sunspots
 
 def plot_sunspot_data(years, sunspots):
@@ -32,9 +32,13 @@ def plot_sunspot_data(years, sunspots):
         years (numpy.ndarray): 年份数组
         sunspots (numpy.ndarray): 太阳黑子数数组
     """
-    # TODO: 实现数据可视化
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(years, sunspots)
+    plt.title('太阳黑子数随时间变化')
+    plt.xlabel('年份')
+    plt.ylabel('太阳黑子数')
+    plt.grid(True)
+    plt.show()
 
 def compute_power_spectrum(sunspots):
     """
@@ -46,10 +50,11 @@ def compute_power_spectrum(sunspots):
     返回:
         tuple: (frequencies, power) 频率数组和功率谱
     """
-    # TODO: 实现傅里叶变换和功率谱计算
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
-    return frequencies, power
+    n = len(sunspots)
+    fft_result = np.fft.fft(sunspots)
+    power = np.abs(fft_result)**2 / n
+    frequencies = np.fft.fftfreq(n, 1)  # 采样间隔为1个月
+    return frequencies[:n//2], power[:n//2]  # 只取正频率部分
 
 def plot_power_spectrum(frequencies, power):
     """
@@ -59,9 +64,14 @@ def plot_power_spectrum(frequencies, power):
         frequencies (numpy.ndarray): 频率数组
         power (numpy.ndarray): 功率谱数组
     """
-    # TODO: 实现功率谱可视化
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    plt.figure(figsize=(12, 6))
+    plt.plot(frequencies, power)
+    plt.title('太阳黑子数据功率谱')
+    plt.xlabel('频率 (1/月)')
+    plt.ylabel('功率')
+    plt.grid(True)
+    plt.xlim(0, 0.05)  # 只显示低频部分，便于观察
+    plt.show()
 
 def find_main_period(frequencies, power):
     """
@@ -74,9 +84,17 @@ def find_main_period(frequencies, power):
     返回:
         float: 主周期（月）
     """
-    # TODO: 实现主周期检测
-    # [STUDENT_CODE_HERE]
-    raise NotImplementedError("请在 {} 中实现此函数".format(__file__))
+    # 忽略频率为0的部分（直流分量）
+    valid_indices = np.where(frequencies > 0.001)
+    valid_freq = frequencies[valid_indices]
+    valid_power = power[valid_indices]
+    
+    # 找到最大功率对应的频率
+    max_power_index = np.argmax(valid_power)
+    main_freq = valid_freq[max_power_index]
+    
+    # 计算周期（月）
+    main_period = 1 / main_freq
     return main_period
 
 def main():
