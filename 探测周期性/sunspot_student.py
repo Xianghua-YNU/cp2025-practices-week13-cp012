@@ -19,9 +19,10 @@ def load_sunspot_data(url):
     返回:
         tuple: (years, sunspots) 年份和太阳黑子数
     """
-    data = np.loadtxt(url)
-    years = data[:, 1]
-    sunspots = data[:, 2]
+    # 使用 usecols 指定只读取第2列（索引1）和第3列（索引2）
+    data = np.loadtxt(url, usecols=(1, 2))  # 注意：列索引从0开始
+    years = data[:, 0]
+    sunspots = data[:, 1]
     return years, sunspots
 
 def plot_sunspot_data(years, sunspots):
