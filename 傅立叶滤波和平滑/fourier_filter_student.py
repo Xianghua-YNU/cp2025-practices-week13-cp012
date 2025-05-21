@@ -15,14 +15,13 @@ from matplotlib import rcParams  # 用于配置 matplotlib
 rcParams['font.sans-serif'] = ['SimHei']  # 指定默认字体为 SimHei
 rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
-
 def load_data(filename):
     """
     加载道琼斯工业平均指数数据
-
+    
     参数:
         filename (str): 数据文件路径，例如 'dow.txt'
-
+    
     返回:
         numpy.ndarray: 包含指数值的数组
     """
@@ -35,102 +34,112 @@ def load_data(filename):
     except Exception as e:
         print(f"加载数据时发生错误: {e}")
         return None
-
+    
     return data
-
 
 def plot_data(data, title="道琼斯工业平均指数"):
     """
     绘制时间序列数据
-
+    
     参数:
         data (numpy.ndarray): 输入数据数组
         title (str): 图表标题，默认为“道琼斯工业平均指数”
-
+    
     返回:
-        None
+        matplotlib.figure.Figure: 绘制的图表对象
     """
     if data is None:
         print("错误：数据为空，无法绘制图表！")
-        return
-
-    plt.figure()
-    plt.plot(data, label='原始数据', color='blue')
-    plt.title(title)
-    plt.xlabel('交易日')
-    plt.ylabel('指数值')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
+        return None
+    
+    # 创建新的 Figure 和 Axes 对象
+    fig, ax = plt.subplots()
+    ax.plot(data, label='原始数据', color='blue')
+    ax.set_title(title)
+    ax.set_xlabel('交易日')
+    ax.set_ylabel('指数值')
+    ax.legend()
+    ax.grid(True)
+    
+    # 返回 Figure 对象
+    return fig
 
 def fourier_filter(data, keep_fraction=0.1):
     """
     执行傅立叶变换并滤波
-
+    
     参数:
         data (numpy.ndarray): 输入数据数组
         keep_fraction (float): 保留的傅立叶系数比例，例如 0.1 表示保留前10%
-
+    
     返回:
         tuple: (滤波后的数据数组, 原始傅立叶系数数组)
     """
     if data is None:
         print("错误：数据为空，无法执行傅立叶滤波！")
         return None, None
-
+    
     coeff = np.fft.rfft(data)
     cutoff = int(len(coeff) * keep_fraction)
-    print(f"保留前 {keep_fraction * 100}% 的系数，cutoff = {cutoff}/{len(coeff)}")
-
+    print(f"保留前 {keep_fraction*100}% 的系数，cutoff = {cutoff}/{len(coeff)}")
+    
     filtered_coeff = np.copy(coeff)
     filtered_coeff[cutoff:] = 0
-
+    
     filtered_data = np.fft.irfft(filtered_coeff)
-
+    
     return filtered_data, coeff
-
 
 def plot_comparison(original, filtered, title="傅立叶滤波结果"):
     """
     绘制原始数据和滤波结果的比较
-
+    
     参数:
         original (numpy.ndarray): 原始数据数组
         filtered (numpy.ndarray): 滤波后的数据数组
         title (str): 图表标题，默认为“傅立叶滤波结果”
-
+    
     返回:
-        None
+        matplotlib.figure.Figure: 绘制的图表对象
     """
     if original is None or filtered is None:
         print("错误：数据为空，无法绘制比较图表！")
-        return
-
-    plt.figure()
-    plt.plot(original, label='原始数据', color='blue')
-    plt.plot(filtered, label='滤波数据', color='red')
-    plt.title(title)
-    plt.xlabel('交易日')
-    plt.ylabel('指数值')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
+        return None
+    
+    # 创建新的 Figure 和 Axes 对象
+    fig, ax = plt.subplots()
+    ax.plot(original, label='原始数据', color='blue')
+    ax.plot(filtered, label='滤波数据', color='red')
+    ax.set_title(title)
+    ax.set_xlabel('交易日')
+    ax.set_ylabel('指数值')
+    ax.legend()
+    ax.grid(True)
+    
+    # 返回 Figure 对象
+    return fig
 
 def main():
+    """
+    主函数，执行数据加载、滤波和绘图任务
+    """
     print("任务1：加载数据并绘制原始数据图")
     data = load_data('dow.txt')
-    plot_data(data, "道琼斯工业平均指数 - 原始数据")
-
+    fig1 = plot_data(data, "道琼斯工业平均指数 - 原始数据")
+    if fig1:
+        plt.show()
+    
     print("\n任务2：傅立叶滤波，保留前10%的系数")
     filtered_10, coeff = fourier_filter(data, 0.1)
-    plot_comparison(data, filtered_10, "傅立叶滤波（保留前10%系数）")
-
+    fig2 = plot_comparison(data, filtered_10, "傅立叶滤波（保留前10%系数）")
+    if fig2:
+        plt.show()
+    
     print("\n任务3：傅立叶滤波，保留前2%的系数")
     filtered_2, _ = fourier_filter(data, 0.02)
-    plot_comparison(data, filtered_2, "傅立叶滤波（保留前2%系数）")
-
+    fig3 = plot_comparison(data, filtered_2, "傅立叶滤波（保留前2%系数）")
+    if fig3:
+        plt.show()
 
 if __name__ == "__main__":
     main()
