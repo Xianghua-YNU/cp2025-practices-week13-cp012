@@ -28,14 +28,16 @@ def lagrange_equation(r):
     返回:
         float: 方程左右两边的差值，当r是L1点位置时返回0
     """
-    # TODO: 实现L1点位置方程 (约5行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 方程应该包含地球引力、月球引力和离心力的平衡关系
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return equation_value
+    # 地球引力
+    f_earth = G * M / r ** 2
+    # 月球引力（注意方向）
+    f_moon = G * m / (R - r) ** 2
+    # 离心力
+    f_centrifugal = omega ** 2 * r
 
+    # 力平衡方程
+    equation_value = f_earth - f_moon - f_centrifugal
+    return equation_value
 
 def lagrange_equation_derivative(r):
     """
@@ -47,14 +49,10 @@ def lagrange_equation_derivative(r):
     返回:
         float: 方程对r的导数值
     """
-    # TODO: 实现L1点位置方程的导数 (约5-10行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 对lagrange_equation函数求导
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
+    # 对方程 G*M/r^2 - G*m/(R-r)^2 = ω^2*r 求导
+    # 导数为 -2*G*M/r^3 - 2*G*m/(R-r)^3 - ω^2
+    derivative_value = -2 * G * M / r ** 3 - 2 * G * m / (R - r) ** 3 - omega ** 2
     return derivative_value
-
 
 def newton_method(f, df, x0, tol=1e-8, max_iter=100):
     """
@@ -70,14 +68,32 @@ def newton_method(f, df, x0, tol=1e-8, max_iter=100):
     返回:
         tuple: (近似解, 迭代次数, 收敛标志)
     """
-    # TODO: 实现牛顿法 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 迭代公式为 x_{n+1} = x_n - f(x_n)/df(x_n)
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return x, iterations, converged
+   x = x0
+    iterations = 0
+    converged = False
 
+    for i in range(max_iter):
+        fx = f(x)
+        dfx = df(x)
+
+        # 检查导数是否接近零
+        if abs(dfx) < 1e-12:
+            break
+
+        # 牛顿迭代公式
+        x_new = x - fx / dfx
+
+        # 检查收敛性
+        relative_error = abs((x_new - x) / x_new)
+        if relative_error < tol:
+            converged = True
+            iterations = i + 1
+            x = x_new
+            break
+
+        x = x_new
+
+    return x, iterations, converged
 
 def secant_method(f, a, b, tol=1e-8, max_iter=100):
     """
@@ -93,13 +109,33 @@ def secant_method(f, a, b, tol=1e-8, max_iter=100):
     返回:
         tuple: (近似解, 迭代次数, 收敛标志)
     """
-    # TODO: 实现弦截法 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 迭代公式为 x_{n+1} = x_n - f(x_n)*(x_n-x_{n-1})/(f(x_n)-f(x_{n-1}))
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
-    return x, iterations, converged
+    x0 = a
+    x1 = b
+    iterations = 0
+    converged = False
+
+    for i in range(max_iter):
+        f0 = f(x0)
+        f1 = f(x1)
+
+        # 弦截法迭代公式
+        if abs(f1 - f0) < 1e-12:
+            break
+
+        x_new = x1 - f1 * (x1 - x0) / (f1 - f0)
+
+        # 检查收敛性
+        relative_error = abs((x_new - x1) / x_new)
+        if relative_error < tol:
+            converged = True
+            iterations = i + 1
+            x = x_new
+            break
+
+        x0 = x1
+        x1 = x_new
+
+    return x1, iterations, converged
 
 
 def plot_lagrange_equation(r_min, r_max, num_points=1000):
@@ -114,12 +150,34 @@ def plot_lagrange_equation(r_min, r_max, num_points=1000):
     返回:
         matplotlib.figure.Figure: 绘制的图形对象
     """
-    # TODO: 实现绘制方程图像的代码 (约15行代码)
-    # [STUDENT_CODE_HERE]
-    # 提示: 在合适的范围内绘制函数图像，标记零点位置
-    
-    raise NotImplementedError("请在 {} 中实现此函数。".format(__file__))
-    
+    # 创建图形
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # 生成采样点
+    r_values = np.linspace(r_min, r_max, num_points)
+    f_values = np.array([lagrange_equation(r) for r in r_values])
+
+    # 绘制函数曲线
+    ax.plot(r_values, f_values, 'b-', label='Lagrange Equation')
+
+    # 添加水平参考线(y=0)
+    ax.axhline(y=0, color='r', linestyle='--', alpha=0.5)
+
+    # 使用scipy求解零点作为参考
+    r_root = optimize.fsolve(lagrange_equation, (r_min + r_max) / 2)[0]
+    ax.axvline(x=r_root, color='g', linestyle='--', alpha=0.5, label=f'Root at r={r_root:.2e} m')
+
+    # 添加标记和标签
+    ax.set_xlabel('Distance from Earth to L1 (m)')
+    ax.set_ylabel('Force Balance Equation Value')
+    ax.set_title('L1 Lagrange Point Equation')
+    ax.grid(True, alpha=0.3)
+    ax.legend()
+
+    # 设置y轴范围以更好地显示零点附近的情况
+    y_min, y_max = min(f_values), max(f_values)
+    ax.set_ylim(min(y_min, -1), max(y_max, 1))
+
     return fig
 
 
