@@ -47,10 +47,10 @@ def compute_power_spectrum(sunspots):
         tuple: (frequencies, power) 频率数组和功率谱
     """
     n = len(sunspots)
-    fft_result = np.fft.fft(sunspots)
-    power = np.abs(fft_result) ** 2 / n
-    frequencies = np.fft.fftfreq(n, 1)  # 采样间隔为1个月
-    return frequencies[:n // 2], power[:n // 2]  # 只取正频率部分
+    fft_result = np.fft.rfft(sunspots)  # 使用rfft只计算正频率部分
+    power = np.abs(fft_result) ** 2 / n ** 2  # 正确归一化
+    frequencies = np.fft.rfftfreq(n, d=1.0)  # 采样间隔为1个月
+    return frequencies, power  # 直接返回正频率部分
 
 
 def plot_power_spectrum(frequencies, power):
@@ -82,14 +82,26 @@ def find_main_period(frequencies, power):
     返回:
         float: 主周期（月）
     """
-    # 忽略频率为0的部分（直流分量）
-    valid_indices = np.where(frequencies > 0.001)
+    # 排除频率为0的直流分量
+    valid_indices = np.where(frequencies > 0.0001)  # 更小的阈值
     valid_freq = frequencies[valid_indices]
     valid_power = power[valid_indices]
 
-    # 找到最大功率对应的频率
-    max_power_index = np.argmax(valid_power)
-    main_freq = valid_freq[max_power_index]
+    # 限制频率范围，聚焦在可能的太阳黑子周期(约8-15年)
+    min_freq = 1 / (15 * 12)  # 15年对应的频率
+    max_freq = 1 / (8 * 12)  # 8年对应的频率
+    periodic_indices = np.where((valid_freq >= min_freq) & (valid_freq <= max_freq))
+
+    # 如果找到符合条件的频率，在其中找最大功率对应的频率
+    if len(periodic_indices[0]) > 0:
+        filtered_freq = valid_freq[periodic_indices]
+        filtered_power = valid_power[periodic_indices]
+        max_power_index = np.argmax(filtered_power)
+        main_freq = filtered_freq[max_power_index]
+    else:
+        # 如果没有找到符合条件的频率，使用所有有效频率
+        max_power_index = np.argmax(valid_power)
+        main_freq = valid_freq[max_power_index]
 
     # 计算周期（月）
     main_period = 1 / main_freq
@@ -116,3 +128,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
